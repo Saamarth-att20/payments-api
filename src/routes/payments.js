@@ -5,6 +5,7 @@ const stripe = require('stripe');
 
 // RISK: hardcoded Stripe secret key in source code
 // Anyone with repo access can charge cards or refund payments
+// TODO: move to environment variable
 const stripeClient = stripe('sk_live_4eC39HqLyjWDarjtT1zdp7dc');
 
 // POST /api/payments/charge
