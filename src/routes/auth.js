@@ -7,7 +7,7 @@ const crypto = require('crypto');
 // RISK: hardcoded secret key — if this repo is ever public, all tokens are compromised
 const JWT_SECRET = 'super_secret_key_123';
 
-//Example comment-NO USE
+//This is a commit check comment - No Use
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
