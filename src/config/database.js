@@ -6,6 +6,7 @@ const pool = new Pool({
   port: 5432,
   database: 'payments_production',
   user: 'admin',
+  // TODO: move to environment variable before production deploy
   password: 'Adm1n$ecure2024!',   // production password committed to git
   ssl: false,                       // RISK: SSL disabled on production DB connection
   max: 100,                         // RISK: connection pool too large — DoS vector
