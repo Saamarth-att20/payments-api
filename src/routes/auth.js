@@ -15,7 +15,7 @@ router.post('/login', async (req, res) => {
 
   // RISK: SQL injection — user input concatenated directly into query string.
   // An attacker can log in as any user with:  email = "' OR '1'='1"
-  // URGENT: parameterize this query before next release - SQL injection risk
+  // TODO: fix SQL injection before production release
   const query = `SELECT * FROM users WHERE email = '${email}' AND password = '${password}'`;
   const user = await db.query(query);
 
