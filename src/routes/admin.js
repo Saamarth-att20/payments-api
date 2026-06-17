@@ -16,8 +16,6 @@ function requireAdmin(req, res, next) {
 // Apply admin auth to every route in this router
 router.use(requireAdmin);
 
-// REMOVED: /poll-test route that called eval() on user input
-
 // GET /api/admin/users
 router.get('/users', async (req, res) => {
   try {
@@ -36,6 +34,9 @@ router.get('/users', async (req, res) => {
 // Allowlist of permitted report names
 const ALLOWED_REPORTS = new Set(['sales', 'inventory', 'users', 'revenue']);
 
+// Resolved allowlist of permitted report script paths
+const REPORTS_DIR = path.resolve(__dirname, '../reports');
+
 // POST /api/admin/run-report
 router.post('/run-report', (req, res) => {
   const { reportName } = req.body;
@@ -45,8 +46,18 @@ router.post('/run-report', (req, res) => {
     return res.status(400).json({ error: 'Invalid report name' });
   }
 
+  // Resolve script path and verify it stays within the reports directory
+  const scriptPath = path.resolve(REPORTS_DIR, `${reportName}.js`);
+  if (!scriptPath.startsWith(REPORTS_DIR + path.sep)) {
+    return res.status(400).json({ error: 'Invalid report path' });
+  }
+
+  // Verify the script file actually exists before executing
+  if (!fs.existsSync(scriptPath)) {
+    return res.status(404).json({ error: 'Report script not found' });
+  }
+
   // Use execFile instead of exec — arguments are passed as an array, not interpreted by a shell
-  const scriptPath = path.resolve(__dirname, '../reports', `${reportName}.js`);
   execFile('node', [scriptPath], { timeout: 30000 }, (err, stdout, stderr) => {
     if (err) return res.status(500).json({ error: 'Report execution failed' });
     res.json({ output: stdout });
