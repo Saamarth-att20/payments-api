@@ -92,17 +92,11 @@ router.get('/export', exportLimiter, authenticate, authorize('admin'), async (re
 router.get('/avatar/:filename', authenticate, (req, res) => {
   const { filename } = req.params;
 
-  if (!filename || /[^a-zA-Z0-9._-]/.test(filename)) {
+  if (!filename || /[^a-zA-Z0-9._-]/.test(filename) || path.basename(filename) !== filename) {
     return res.status(400).json({ error: 'Invalid filename.' });
   }
 
-  const filePath = path.resolve(AVATARS_DIR, filename);
-
-  if (!filePath.startsWith(AVATARS_DIR + path.sep) && filePath !== AVATARS_DIR) {
-    return res.status(403).json({ error: 'Access denied.' });
-  }
-
-  res.sendFile(filePath, err => {
+  res.sendFile(filename, { root: AVATARS_DIR }, err => {
     if (err) res.status(404).json({ error: 'File not found.' });
   });
 });
