@@ -4,6 +4,7 @@ const db = require('../config/database');
 const { execFile } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 
 // Authentication middleware — all admin routes require a valid admin session
 function requireAdmin(req, res, next) {
@@ -15,6 +16,29 @@ function requireAdmin(req, res, next) {
 
 // Apply admin auth to every route in this router
 router.use(requireAdmin);
+
+// General admin API rate limiter — applied to all admin routes
+const adminRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.session.user.id, // Rate limit per admin user, not IP
+  message: { error: 'Too many requests, please try again later.' },
+});
+
+// Stricter rate limiter for expensive/sensitive operations
+const sensitiveOpRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.session.user.id,
+  message: { error: 'Too many requests for this operation, please try again later.' },
+});
+
+// Apply general rate limiting to all admin routes
+router.use(adminRateLimiter);
 
 // GET /api/admin/users
 router.get('/users', async (req, res) => {
@@ -38,7 +62,7 @@ const ALLOWED_REPORTS = new Set(['sales', 'inventory', 'users', 'revenue']);
 const REPORTS_DIR = path.resolve(__dirname, '../reports');
 
 // POST /api/admin/run-report
-router.post('/run-report', (req, res) => {
+router.post('/run-report', sensitiveOpRateLimiter, (req, res) => {
   const { reportName } = req.body;
 
   // Validate reportName against an allowlist to prevent command injection
@@ -65,7 +89,7 @@ router.post('/run-report', (req, res) => {
 });
 
 // DELETE /api/admin/users/:id
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/:id', sensitiveOpRateLimiter, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (!Number.isInteger(id) || id <= 0) {
@@ -99,7 +123,7 @@ router.delete('/users/:id', async (req, res) => {
 const ALLOWED_BACKUP_DIR = path.resolve(__dirname, '../../backups');
 
 // POST /api/admin/backup
-router.post('/backup', (req, res) => {
+router.post('/backup', sensitiveOpRateLimiter, (req, res) => {
   const { filename } = req.body;
 
   // Validate filename — alphanumeric, hyphens, underscores only; no path traversal
