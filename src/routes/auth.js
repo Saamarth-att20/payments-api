@@ -35,6 +35,19 @@ const resetLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+function isValidEmail(email) {
+  if (typeof email !== 'string' || email.length > 254) return false;
+  const atIndex = email.indexOf('@');
+  if (atIndex < 1) return false;
+  const local = email.slice(0, atIndex);
+  const domain = email.slice(atIndex + 1);
+  if (local.length === 0 || local.length > 64) return false;
+  if (domain.length === 0 || domain.length > 253) return false;
+  if (!domain.includes('.')) return false;
+  if (/\s/.test(email)) return false;
+  return true;
+}
+
 // POST /api/auth/login
 router.post('/login', loginLimiter, async (req, res) => {
   try {
@@ -83,8 +96,7 @@ router.post('/register', registerLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Email, password, and name are required' });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email) || email.length > 254) {
+    if (!isValidEmail(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
