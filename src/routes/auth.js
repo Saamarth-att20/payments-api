@@ -44,7 +44,7 @@ function isValidEmail(email) {
   if (local.length === 0 || local.length > 64) return false;
   if (domain.length === 0 || domain.length > 253) return false;
   if (!domain.includes('.')) return false;
-  if (/\s/.test(email)) return false;
+  if (email.includes(' ') || email.includes('\t') || email.includes('\n') || email.includes('\r')) return false;
   return true;
 }
 
